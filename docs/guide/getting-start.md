@@ -2,11 +2,17 @@
 sidebarDepth: 3
 ---
 
-# 开发准备
+# 学习准备
 
 在进行正式的源码阅读之前我们需要做以下准备
 
-## 本地文件准备
+## 前置知识点
+
+[Vite 中文文档翻译](https://zhuanlan.zhihu.com/p/176704807)  
+[esbuild](http://docs.breword.com/evanw-esbuild/#documentation-anchor) 用于编译 TS 语法  
+[rollup](https://www.rollupjs.com/) 用于生产环境代码打包  
+
+## 本地项目准备
 
 需要在本地准备 Vite 以及 Vite   创建的默认项目
 
@@ -54,7 +60,7 @@ $ tree -L 2 -I 'node_modules' ./src
     ├── build # Vite build 命令运行代码
     ├── cli.ts
     ├── config.ts
-    ├── esbuildService.ts
+    ├── esbuildService.ts # esbuild 相关代码
     ├── index.ts
     ├── optimizer # 预优化
     ├── resolver.ts # 模块加载逻辑
@@ -65,3 +71,24 @@ $ tree -L 2 -I 'node_modules' ./src
 
 6 directories, 12 files
 ```
+
+## 启动项目
+
+启动 vite_test，观察 main.js 文件
+
+```bash
+$ npm run dev
+```
+
+```js
+// main.js
+import { createApp } from 'vue'
+import App from './App.vue'
+import './index.css'
+
+createApp(App).mount('#app')
+```
+![](../images/network.png)
+
+
+通过观察我们可以发现，启动本地服务后浏览器加载的代码与我们本地的代码引用依赖路径不一致。这也是文档里所提到的 Vite 支持裸模块的加载。正如文档所提到的 Vite 在本地开发时会使用 Koa 来启动服务，并且在每个类型的文件到达浏览器之前会根据文件的类型做不同的 transfrom 处理。这也是的 Vite 核心机制之一的模块加载解析逻辑。

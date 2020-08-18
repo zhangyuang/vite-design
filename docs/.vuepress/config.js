@@ -49,6 +49,10 @@ module.exports = {
           children: [
             '',
             'getting-start',
+            'module-resolve',
+            'optimize',
+            'render',
+            'hmr'
           ],
         }
       ]
