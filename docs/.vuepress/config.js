@@ -17,7 +17,7 @@ module.exports = {
    */
   head: [
     ['meta', { name: 'keywords', itemprop: 'keywords', content: 'Vite 源码 分析 Vue' }],
-    ['meta', { property: 'og:title', content: 'Vite Vue vite vue 源码' }],
+    ['meta', { property: 'og:title', content: 'Vite 源码分析' }],
     ['meta', { property: 'og:description', content: 'vite vue 源码分析' }],
   ],
 
@@ -48,6 +48,7 @@ module.exports = {
           collapsable: false,
           children: [
             '',
+            'chinese-doc',
             'getting-start',
             'module-resolve',
             'optimize',

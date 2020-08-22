@@ -50,7 +50,7 @@ app.use(require('koa-static')(path.join(root, 'public')))
 
 ## 模块路径重写
 
-原生的 ES module 不支持裸模块的导入，所以 Vite 进行了模块加载路径的重写。这里我们可以通过使用 debug 模块的功能来总览 Vite 到底重写了哪些路径
+这里我们分析的核心文件是 `src/node/server/serverPluginModuleRewrite.ts`。 原生的 ES module 不支持裸模块的导入，所以 Vite 进行了模块加载路径的重写。这里我们可以通过使用 debug 模块的功能来总览 Vite 到底重写了哪些路径
 ![](../images/rewritebare.png)
 通过 debug 模块的输出我们可以很直观的发现  "vue" --> "/@modules/vue.js", 至于其他的导入路径也被重写了例如 "./App.vue" --> "/src/App.vue" 则是为了让 Vite 更方便的找到模块的具体绝对路径。
 
@@ -317,9 +317,43 @@ if (timestamp) {
 这时候我们的新请求的 query 参数中含有 timestamp 这个参数了。并且在 handleJSReload 中，我们在 hmrDirtyFilesMap 把 hmr.js set进了 dirtyFiles。所以这里我们走到了 if 分支。在 hmr.js 的 path 后面加上了 t 参数。最后一个 type 为 template 的请求我们在后续组件渲染的章节进行讲解。  
 简单总结一下当我们使用 import.meta.hot 接收了某个模块的更新后，当它更新时，会触发 dirtyFiles 的逻辑
 
-####  模块自身的更新
+#### 模块自身的更新
 
 至于下面的 else 分支我们修改 helloworld.vue 时会触发 serverPluginVue.ts 的文件监控，进而发送 `vue-reload` 消息，让客户端进行新的 helloworld.vue 文件的请求。并且由于 Vite 本身的缓存机制，这里我们只有在第一次修改 helloworld.vue 时才会发起对 hmr.js 的实际请求。之后 Vite 检测到 hmr.js 文件并没有修改就不会再发起新的请求了。
-即在模块因为自身更新时, 走下面的 else 分支。
+即在模块因为自身的修改而更新时, 走下面的 else 分支。
 
 ![](../images/helloworldhmr.png)
+
+#### 重写路径
+
+通过上面的代码拿到不同类型的路径导入。如：裸模块，相对路径，hmr更新。我们用不同的策略来重写。拿到结果后，通过 [magic-string](https://www.npmjs.com/package/magic-string) 来覆盖之前的路径。通过上面词法分析拿到的 import 的分析结果。我们可以通过 overwrite 来重写之前 import 的路径为新的。
+
+```js
+if (resolved !== id) {
+  debug(`    "${id}" --> "${resolved}"`)
+  s.overwrite(
+    start,
+    end,
+    hasLiteralDynamicId ? `'${resolved}'` : resolved // 由于lexer的分析结果对于动态导入的情况会包含外层的引号，所以这里我们需要手动添加,否则最终的结果将不存在引号导致报错
+  )
+  hasReplaced = true
+}
+```
+
+对于使用了 import.meta.hot 的模块我们需要在模块顶层注入以下代码，使得其具有 import.meta.hot api提供的能力。(在 HMR 章节将进行更具体的分析)import.meta.env 同理也需要注入。这里不再赘述。
+
+```js
+if (hasHMR) {
+  debugHmr(`rewriting ${importer} for HMR.`)
+  rewriteFileWithHMR(root, source, importer, resolver, s)
+  hasReplaced = true
+}
+
+// src/server/serverPluginHmr.ts
+// inject import.meta.hot
+s.prepend(
+  `import { createHotContext } from "${clientPublicPath}"; ` +
+    `import.meta.hot = createHotContext(${JSON.stringify(importer)}); `
+)
+```
+

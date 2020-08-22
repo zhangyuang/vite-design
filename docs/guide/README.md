@@ -6,4 +6,4 @@
 - Vite 的预优化机制
 - Vite 的 HMR(热替换)机制
 
-如果觉得对你有帮助，麻烦点个 Star ✨
+如果觉得对你有帮助，麻烦跳转到 [github](https://github.com/zhangyuang/vite-design) 点个 Star ✨

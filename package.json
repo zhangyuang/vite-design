@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "vuepress dev docs",
     "build": "vuepress build docs",
-    "publish": "npm run build && surge ./docs/.vuepress/dist vite-desgin.surge.sh"
+    "publish": "npm run build && surge ./docs/.vuepress/dist vite-design.surge.sh"
   },
   "license": "MIT",
   "devDependencies": {
