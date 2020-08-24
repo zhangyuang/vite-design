@@ -8,9 +8,9 @@ sidebarDepth: 3
 
 ## 前置知识点
 
-[Vite 中文文档翻译](https://zhuanlan.zhihu.com/p/176704807)  
-[esbuild](http://docs.breword.com/evanw-esbuild/#documentation-anchor) 用于编译 TS 语法  
-[rollup](https://www.rollupjs.com/) 用于生产环境代码打包  
+[koa](https://koa.bootcss.com/) Node.js 框架  
+[esbuild](http://docs.breword.com/evanw-esbuild/#documentation-anchor) 编译 TS -> JS  
+[rollup](https://www.rollupjs.com/) 用于生产环境代码打包工具  
 
 ## 本地项目准备
 
