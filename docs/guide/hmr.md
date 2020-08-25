@@ -30,3 +30,23 @@ const watcher = chokidar.watch(root, {
     ignored: [/\bnode_modules\b/, /\b\.git\b/]
 }) as HMRWatcher
 ```
+
+## css 热替换
+
+有两种情况都可以修改样式，一种是修改外部 css 源文件。例如 `import './index.css'`, 或者直接改 Vue 组件的 style 标签。这两种修改方式的热更新策略也不一样。
+
+```js
+  watcher.on('change', (filePath) => {
+    if (isCSSRequest(filePath)) {
+      const publicPath = resolver.fileToRequest(filePath)
+      if (srcImportMap.has(filePath)) {
+        // handle HMR for <style src="xxx.css">
+        // it cannot be handled as simple css import because it may be scoped
+        const styleImport = srcImportMap.get(filePath)
+        vueCache.del(filePath)
+        vueStyleUpdate(styleImport)
+        return
+      }
+    }
+  })
+```

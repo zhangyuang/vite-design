@@ -9,11 +9,11 @@ sidebarDepth: 3
 观察一下我们实际在浏览器中加载的文件内容。可以看到表面我们加载的是一个 .vue 组件。但是文件的实际内容还是传统的 .js 文件，并且 Content-Type 也是 `application/javascript; charset=utf-8`
 所以浏览器才能够直接运行该文件。并且我们可以发现不同的文件类型后面跟的 query type 参数也不一样。有 `?type=template` `?type=import`。下面让我们来具体分析一下一个 Vue 组件是如何在浏览器中被渲染的吧
 
-## 挂载样式
+## 处理 css 文件
 
 浏览器是不支持直接 import 导入 .css 文件的。如果你配置过 webpack 来处理 css 文件，那么你应该清楚这类问题的解决方式要么是将 css 编译成 js 文件，要么是把组件中的 css 单独提取为 css文件通过 link 标签来进行加载。Vite 在本地开发时采用的是第一种方式，在生产环境构建时仍然是编译成独立的 css 文件进行加载。
 
-### 处理 css 文件
+### 挂载样式
 
 Vite 使用 serverPluginCss 插件来处理形如 `http://localhost:3000/src/index.css?import` 这样的以.css为后缀结尾且 query 包含 import 的请求。
 
@@ -93,5 +93,7 @@ updateStyle 中用到的核心 API 是 [CSSStyleSheet](https://developer.mozilla
 
 ## 解析 Vue 文件
 
-
+```js
+// src/node/server/serverPluginVue.ts
+```
 更新中...
