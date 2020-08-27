@@ -16,9 +16,9 @@ module.exports = {
    * ref：https://v1.vuepress.vuejs.org/config/#head
    */
   head: [
-    ['meta', { name: 'keywords', itemprop: 'keywords', content: 'Vite 源码 分析 Vue' }],
-    ['meta', { property: 'og:title', content: 'Vite 源码分析' }],
-    ['meta', { property: 'og:description', content: 'vite vue 源码分析' }],
+    ['meta', { name: 'keywords', itemprop: 'keywords', content: 'vite 源码分析 Vue 前端开发,Vue.js,vue-cli' }],
+    ['meta', { property: 'og:title', content: 'vite 源码分析' }],
+    ['meta', { property: 'og:description', content: 'vite vue 源码分析 一个基于 Vue3 单文件组件的非打包开发服务器' }],
   ],
 
   /**
