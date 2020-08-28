@@ -75,7 +75,7 @@ if (boundaries.size) {
 // no boundaries
 normalCssUpdate(publicPath)
 ```
-### 导入关系链
+### css 导入关系链
 
 以以下代码为例
 ![](../images/cssmodules3.png)
@@ -84,7 +84,7 @@ normalCssUpdate(publicPath)
 const boundaries = getCssImportBoundaries(filePath)
 ```
 
-这一行代码就是获取当前文件的被导入关系链。
+这一行代码就是获取当前文件在 css 层级被导入关系链。包括独立的 css 文件以及 vue 组件的 style 标签
 举个例子
 
 ```js
@@ -183,7 +183,7 @@ function moduleCssUpdate(filePath: string, resolver: InternalResolver) {
   watcher.handleJSReload(filePath)
 }
 ```
-接着让我们看看 handleJSReload 究竟干了什么
+因为启动了 css-modules 实质是导出一个对象。我们可以把这个文件当作 js 文件来看待。所以更新策略与我们后面讲到的 js 文件的热更新策略是一样的，接着让我们看看 handleJSReload 究竟干了什么
 
 ```js
  const handleJSReload = (watcher.handleJSReload = (
@@ -196,4 +196,189 @@ function moduleCssUpdate(filePath: string, resolver: InternalResolver) {
 
 ```
 
-首先获取被导入关系链，找到依赖 `index.module.css` 的文件，这里我们是 App.vue
+首先获取被导入关系链，找到依赖 `index.module.css` 的文件，这里的 importers 是 App.vue  
+
+```js
+const dirtyFiles = new Set<string>()
+dirtyFiles.add(publicPath)
+
+const hasDeadEnd = walkImportChain(
+  publicPath,
+  importers || new Set(),
+  hmrBoundaries,
+  dirtyFiles
+)
+```
+我们将当前文件 `src/index/module.css` 加入脏文件的集合当中，因为当前文件需要修改。接着我们通过 walkImportChain 顾名思义，遍历导入链。做一些信息收集操作。并且判断需不需要页面的全量更新即页面刷新。这里的 importers 导入链只包含直接使用 import 关键字的文件。比如在 App.vue 中 `import style from './index.module.css'` 或者 main.js 中 `import style from './index.module.css'`。如果是在另一个 css 文件通过 `@import './index.module.css'` 的方式导入则不会被计入导入链
+
+```js
+// 在这个例子里我们称 App.vue 为导入模块 称 index.module.css 为被导入模块
+function walkImportChain(
+  importee: string,
+  importers: Set<string>,
+  hmrBoundaries: Set<string>,
+  dirtyFiles: Set<string>,
+  currentChain: string[] = []
+): boolean {
+  if (hmrDeclineSet.has(importee)) {
+    // 如果模块明确通过 import.meta.hot.decline 拒绝热更新，则直接页面刷新返回 true
+    return true
+  }
+
+  if (isHmrAccepted(importee, importee)) {
+    // 如果模块通过 import.meta.hot.accept 接收自身的更新则直接返回 false 不需要刷新
+    hmrBoundaries.add(importee)
+    dirtyFiles.add(importee)
+    return false
+  }
+  for (const importer of importers) {
+    if (
+      importer.endsWith('.vue') ||
+      // 如果导入模块 通过 import.meta.hot.acceptDeps 接收了被导入模块的更新通知
+      isHmrAccepted(importer, importee) ||
+      // 如果导入模块通过 import.meta.hot.accept 接收自身的更新
+      isHmrAccepted(importer, importer)
+    ) {
+      // 如果导入模块是 vue 组件，则添加进 脏文件，代表此文件需要被更新
+      if (importer.endsWith('.vue')) {
+        dirtyFiles.add(importer)
+      }
+      hmrBoundaries.add(importer)
+      currentChain.forEach((file) => dirtyFiles.add(file))
+    } else {
+      // 如果导入模块不是 vue 组件则走else分支
+      // 这里的导入模块可以是 js 文件，比如我们在 main.js 里面 import style from './index.module.css'
+      // 如果走到了这个else分支且没有更上层的导入模块。则认为该模块的导入链都是js文件且最上层的文件是main.js。这种情况需要整个页面刷新
+      const parentImpoters = importerMap.get(importer)
+      if (!parentImpoters) {
+        return true
+      } else if (!currentChain.includes(importer)) {
+        // 如果有更上层的导入模块则继续递归判断上层模块一直往上找
+        if (
+          walkImportChain(
+            importer,
+            parentImpoters,
+            hmrBoundaries,
+            dirtyFiles,
+            currentChain.concat(importer)
+          )
+        ) {
+          return true
+        }
+      }
+    }
+  }
+  return false
+}
+```
+结合上面的分析，其实我们只需要关注什么情况下会返回 true 的情况即可。因为这种情况需要整个页面 reload。大部分情况下我们都不会走到这个逻辑。即只有当你修改的文件的最顶层导入模块是 main.js 的时候才需要进行页面的 reload
+
+```js
+if (hasDeadEnd) {
+  send({
+    type: 'full-reload',
+    path: publicPath
+  })
+  console.log(chalk.green(`[vite] `) + `page reloaded.`)
+}
+```
+
+如果 hasDeadEnd 为 true 则进行整个页面的 reload
+
+```js
+const boundaries = [...hmrBoundaries]
+  const file =
+    boundaries.length === 1 ? boundaries[0] : `${boundaries.length} files`
+  console.log(
+    chalk.green(`[vite:hmr] `) +
+      `${file} hot updated due to change in ${relativeFile}.`
+  )
+  send({
+    type: 'multi',
+    updates: boundaries.map((boundary) => {
+      return {
+        type: boundary.endsWith('vue') ? 'vue-reload' : 'js-update',
+        path: boundary,
+        changeSrcPath: publicPath,
+        timestamp
+      }
+    })
+  })
+```
+
+接着是不需要全量更新的情况。处理方式也很简单。我们遍历导入链。根据链上的每个文件的类型，发送对应的更新消息给客户端。这里我们的导入链上只有 App.vue。  
+所以发送 vue-reload 的消息
+```js
+case 'vue-reload':
+      queueUpdate(
+        import(`${path}?t=${timestamp}`)
+          .catch((err) => warnFailedFetch(err, path))
+          .then((m) => () => {
+            __VUE_HMR_RUNTIME__.reload(path, m.default)
+            console.log(`[vite] ${path} reloaded.`)
+          })
+      )
+      break
+```
+这里维护了一个队列，来保证组件的更新顺序是先进先出。
+![](../images/vue-reload.png)
+
+可以看到页面重新请求了一个新的 App.vue 文件。且由于这个新文件的代码中包含新的带有时间参数t的 index.module.css 请求。所以我们也同样发起请求获取了新的 index.module.css 文件。
+
+### vueStyleUpdate
+
+修改 vue 组件 style 标签样式
+
+```js
+  function vueStyleUpdate(styleImport: string) {
+    const publicPath = cleanUrl(styleImport)
+    const index = qs.parse(styleImport.split('?', 2)[1]).index
+    const path = `${publicPath}?type=style&index=${index}`
+    console.log(chalk.green(`[vite:hmr] `) + `${publicPath} updated. (style)`)
+    watcher.send({
+      type: 'style-update',
+      path,
+      changeSrcPath: path,
+      timestamp: Date.now()
+    })
+  }
+```
+
+处理方式也非常简单。找到修改的具体组件发起新的请求且请求类型为 style
+![](../images/vuestyle.png)
+可以看的新的请求只包含我们修改的新样式
+
+## js 热替换
+
+js 文件的热更新其实在上面分析 css-modules 时已经顺带提到了。会被 handleJSReload
+这个方法处理。处理结果也是两种
+
+- 导入链最上层是 main.js 这种情况页面 reload
+- 不需要全量更新，根据导入链发起新文件的请求
+
+## vue 组件热替换
+
+vue 组件的热替换分为以下几种情况
+
+- `vue-rerender` 只发起请求类型为 template 的请求。无需请求整个完整的新组件
+- `vue-reload` 发起新组件的完整请求
+- `style-update` style 标签更新
+- `style-remove` style 标签移除
+
+接下来我们来分析每种情况的更新时机
+
+### vue-reload
+
+发起新组件的完整请求
+
+```js
+//src/node/server/serverPluginVue.ts
+watcher.on('change', (file) => {
+  if (file.endsWith('.vue')) {
+    handleVueReload(file)
+  }
+})
+```
+
+vue 文件修改时触发 handleVueReload 方法
+

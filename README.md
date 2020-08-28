@@ -7,3 +7,5 @@
 - Vite 的 HMR(热替换)机制
 
 如果觉得对你有帮助，麻烦点个 Star ✨
+
+![](./docs/images/resume.png)
