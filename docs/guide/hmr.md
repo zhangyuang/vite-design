@@ -4,7 +4,7 @@ sidebarDepth: 3
 
 # 热替换
 
-热替换(Hot Module Replacement) 指的是修改代码后无需刷新页面即可生效。经常跟 Hot Module Reload 搞混。一个成熟的框架是必须要具备热替换能力的。Vite 的热替换实现与业界知名的一些模块如 webpack-dev-server 的实现类似。本质都是通过 websocket 建立服务端与浏览器的通信。如果对 websocket 不了解的可能需要先去学习下相关知识点。这里我们将分别分析修改几种不同类型的文件如 .vue .js .css 文件的热替换机制在 Vite 是具体如何实现的。同时也会分析 Vite 提供的热替换相关的 API，如: import.meta.hot
+热替换(Hot Module Replacement) 指的是修改代码后无需刷新页面即可生效。经常跟 `Hot Module Reload` 搞混。一个成熟的框架是必须要具备热替换能力的。Vite 的热替换实现与业界知名的一些模块如 `webpack-dev-server` 的实现类似。本质都是通过 websocket 建立服务端与浏览器的通信。如果对 `WebSocket` 不了解的可能需要先去学习下相关知识点。这里我们将分别分析修改几种不同类型的文件如 `.vue`, `.js`, `.css` 文件的热替换机制在 Vite 是具体如何实现的。同时也会分析 Vite 提供的热替换相关的 API，如: `import.meta.hot`
 
 ## 监听文件变化
 
@@ -367,7 +367,7 @@ vue 组件的热替换分为以下几种情况
 
 接下来我们来分析每种情况的更新时机
 
-### vue-reload
+### 更新类型
 
 发起新组件的完整请求
 
@@ -382,3 +382,345 @@ watcher.on('change', (file) => {
 
 vue 文件修改时触发 handleVueReload 方法
 
+```js
+const descriptor = await parseSFC(root, filePath, content)
+```
+首先用官方提供的库来将单文件组件编译成 descriptor。这里我们摘出比较重要的信息省略 sourcemap信息。
+
+```js
+{
+  filename: '/Users/yuuang/Desktop/github/vite_test/src/App.vue',
+  source: '<template>\n' +
+    '  <img alt="Vue logo" src="./assets/logo.png" :class="style.big"/>\n' +
+    '  <div class="small">\n' +
+    '    small1\n' +
+    '  </div>\n' +
+    '  <HelloWorld msg="Hello Vue 3.0 + Vite" />\n' +
+    '</template>\n' +
+    '\n' +
+    '<script>\n' +
+    "import HelloWorld from './components/HelloWorld.vue'\n" +
+    "import style from './index.module.css'\n" +
+    '\n' +
+    'export default {\n' +
+    "  name: 'App',\n" +
+    '  components: {\n' +
+    '    HelloWorld\n' +
+    '  },\n' +
+    '  data() {\n' +
+    '    return {\n' +
+    '      style: style\n' +
+    '    }\n' +
+    '  },\n' +
+    '  mounted () {\n' +
+    "    console.log('mounted')\n" +
+    '  }\n' +
+    '}\n' +
+    '</script>\n' +
+    '\n' +
+    '<style>\n' +
+    '.small {\n' +
+    '  width:21px\n' +
+    '}\n' +
+    '</style>\n' +
+    '\n',
+  template: {
+    type: 'template',
+    content: '\n' +
+      '  <img alt="Vue logo" src="./assets/logo.png" :class="style.big"/>\n' +
+      '  <div class="small">\n' +
+      '    small1\n' +
+      '  </div>\n' +
+      '  <HelloWorld msg="Hello Vue 3.0 + Vite" />\n',
+    loc: {
+      source: '\n' +
+        '  <img alt="Vue logo" src="./assets/logo.png" :class="style.big"/>\n' +
+        '  <div class="small">\n' +
+        '    small1\n' +
+        '  </div>\n' +
+        '  <HelloWorld msg="Hello Vue 3.0 + Vite" />\n',
+      start: [Object],
+      end: [Object]
+    },
+    attrs: {},
+    map: xxx
+  },
+  script: {
+    type: 'script',
+    content: '\n' +
+      "import HelloWorld from './components/HelloWorld.vue'\n" +
+      "import style from './index.module.css'\n" +
+      '\n' +
+      'export default {\n' +
+      "  name: 'App',\n" +
+      '  components: {\n' +
+      '    HelloWorld\n' +
+      '  },\n' +
+      '  data() {\n' +
+      '    return {\n' +
+      '      style: style\n' +
+      '    }\n' +
+      '  },\n' +
+      '  mounted () {\n' +
+      "    console.log('mounted')\n" +
+      '  }\n' +
+      '}\n',
+    loc: {
+      source: '\n' +
+        "import HelloWorld from './components/HelloWorld.vue'\n" +
+        "import style from './index.module.css'\n" +
+        '\n' +
+        'export default {\n' +
+        "  name: 'App',\n" +
+        '  components: {\n' +
+        '    HelloWorld\n' +
+        '  },\n' +
+        '  data() {\n' +
+        '    return {\n' +
+        '      style: style\n' +
+        '    }\n' +
+        '  },\n' +
+        '  mounted () {\n' +
+        "    console.log('mounted')\n" +
+        '  }\n' +
+        '}\n',
+      start: [Object],
+      end: [Object]
+    },
+    attrs: {},
+    map: xxx
+  },
+  scriptSetup: null,
+  styles: [
+    {
+      type: 'style',
+      content: '\n.small {\n  width:21px\n}\n',
+      loc: [Object],
+      attrs: {},
+      map: [Object]
+    }
+  ],
+  customBlocks: []
+}
+```
+拿到 parse 之后的组件 descriptor 后 我们继续往下看
+
+```js
+const prevDescriptor = cacheEntry && cacheEntry.descriptor
+if (!prevDescriptor) {
+  // the file has never been accessed yet
+  debugHmr(`no existing descriptor found for ${filePath}`)
+  return
+}
+```
+
+从缓存中读取之前的组件缓存。如果没有则说明该组件还没有被渲染。什么都不用做。这里解释一下什么情况下会走到这里。当我们启动本地服务，但是并没有真正访问过该服务时。此时所有的文件缓存除了预优化的部分 都是 undefined，
+这时候我们直接修改组件会走到此 if 分支。
+
+```js
+if (
+  !isEqualBlock(descriptor.script, prevDescriptor.script) ||
+  !isEqualBlock(descriptor.scriptSetup, prevDescriptor.scriptSetup)
+) {
+  return sendReload()
+}
+function isEqualBlock(a: SFCBlock | null, b: SFCBlock | null) {
+  // 首先比较两个对象的src属性，如果一样直接返回true
+  // 接着遍历两个对象的 attrs 进行比较
+  if (!a && !b) return true
+  if (!a || !b) return false
+  if (a.src && b.src && a.src === b.src) return true
+  if (a.content !== b.content) return false
+  const keysA = Object.keys(a.attrs)
+  const keysB = Object.keys(b.attrs)
+  if (keysA.length !== keysB.length) {
+    return false
+  }
+  return keysA.every((key) => a.attrs[key] === b.attrs[key])
+}
+```
+
+第一种需要重新 vue-reload 的情况，当我们同一个组件前后两次渲染时的 script 或者 scriptSetup 不一致时，需要重新 load 整个组件。[setup](https://juejin.im/post/6844903877574295560) 是 Vue3 中新提出的特性。如果前后组件的 script* 相等，则继续往下判断。  
+
+```js
+if (!isEqualBlock(descriptor.template, prevDescriptor.template)) {
+  needRerender = true
+}
+```
+
+接下来判断如果前后的 template 不一致，则发送 vue-rerender 消息。只需要发起 type 为 template 的请求即可。  
+接下来是进行 style 的分析
+
+```js
+// css modules update causes a reload because the $style object is changed
+// and it may be used in JS. It also needs to trigger a vue-style-update
+// event so the client busts the sw cache.
+if (
+  prevStyles.some((s) => s.module != null) ||
+  nextStyles.some((s) => s.module != null)
+) {
+  return sendReload()
+}
+```
+
+如果应用了 css-modules 的 css 文件内容更新了则需要 vue-reload。 通过注释我们也可以看出原因。因为 css-modules 导出了一个对象，并且该对象在 js 文件中可能被使用了。同时它也需要触发 vue-style-update 类型的消息去清楚之前的 service worker 的缓存的文件。
+![](../images/vuehmr.png)
+可以看到当我们修改 index.module.css 文件时，发送了两个消息分别是 vue-reload以及 style-update
+
+```js
+// force reload if CSS vars injection changed
+if (
+  prevStyles.some((s, i) => {
+    const next = nextStyles[i]
+    if (s.attrs.vars && (!next || next.attrs.vars !== s.attrs.vars)) {
+      return true
+    }
+  })
+) {
+  return sendReload()
+}
+```
+如果 inject 注入的 css 变量改变, 触发 vue-reload
+
+```js
+// force reload if scoped status has changed
+if (prevStyles.some((s) => s.scoped) !== nextStyles.some((s) => s.scoped)) {
+  return sendReload()
+}
+```
+如果 scoped 属性发生了变化，触发 vue-reload
+
+```js
+// only need to update styles if not reloading, since reload forces
+// style updates as well.
+nextStyles.forEach((_, i) => {
+  if (!prevStyles[i] || !isEqualBlock(prevStyles[i], nextStyles[i])) {
+    didUpdateStyle = true
+    const path = `${publicPath}?type=style&index=${i}`
+    send({
+      type: 'style-update',
+      path,
+      changeSrcPath: path,
+      timestamp
+    })
+  }
+})
+```
+如果组件前后的 descriptor 的 styles 属性不相等且不涉及其他会触发 vue-reload 的条件，此时发送 style-update 消息。
+
+```js
+// stale styles always need to be removed
+prevStyles.slice(nextStyles.length).forEach((_, i) => {
+  didUpdateStyle = true
+  send({
+    type: 'style-remove',
+    path: publicPath,
+    id: `${styleId}-${i + nextStyles.length}`
+  })
+})
+```
+如果组件前后的 styles 属性长度不一致。通常是移除了整个 style 标签。此时需要发送 style-remove 消息
+
+```js
+const prevCustoms = prevDescriptor.customBlocks || []
+const nextCustoms = descriptor.customBlocks || []
+
+// custom blocks update causes a reload
+// because the custom block contents is changed and it may be used in JS.
+if (
+  nextCustoms.some(
+    (_, i) =>
+      !prevCustoms[i] || !isEqualBlock(prevCustoms[i], nextCustoms[i])
+  )
+) {
+  return sendReload()
+}
+```
+如果自定义块发生了改变则需要 vue-reload。因为自定义块在 js 中可能被使用。
+
+### 客户端接收消息
+
+上面提到了各种情况我们向客户端浏览器发送的消息类型。下面我们看看浏览器接收到这些类型的消息后分别做了什么事情
+
+#### vue-reload
+
+比较简单。直接发起新的带有 t 参数的组件请求
+
+```js
+case 'vue-reload':
+      queueUpdate(
+        import(`${path}?t=${timestamp}`)
+          .catch((err) => warnFailedFetch(err, path))
+          .then((m) => () => {
+            __VUE_HMR_RUNTIME__.reload(path, m.default)
+            console.log(`[vite] ${path} reloaded.`)
+          })
+      )
+      break
+```
+
+#### vue-rerender
+
+如上面提到的，vue-rerender 只需要发起 type 为 template 的组件请求即可
+
+```js
+case 'vue-rerender':
+    const templatePath = `${path}?type=template`
+    import(`${templatePath}&t=${timestamp}`).then((m) => {
+      __VUE_HMR_RUNTIME__.rerender(path, m.render)
+      console.log(`[vite] ${path} template updated.`)
+    })
+    break
+```
+
+#### style-remove
+
+style-update 在 css 热替换时已经介绍了。这里介绍 style-remove,其实本质跟 style-update 差不多。
+
+```js
+case 'style-remove':
+    removeStyle(payload.id)
+    break
+function removeStyle(id: string) {
+  let style = sheetsMap.get(id)
+  if (style) {
+    if (style instanceof CSSStyleSheet) {
+      // @ts-ignore
+      const index = document.adoptedStyleSheets.indexOf(style)
+      // @ts-ignore
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        (s: CSSStyleSheet) => s !== style
+      )
+    } else {
+      document.head.removeChild(style)
+    }
+    sheetsMap.delete(id)
+  }
+}
+```
+
+通过传入的文件对应的 hashid。在当前文档的 CSSStyleSheet 中移除该样式。  
+
+### 总结
+
+综上我们可以总结出不同的消息的触发情况 
+
+#### vue-reload
+
+- script 或者 sctiptSetup 改变
+- css-modules 文件改变
+- css vars 改变
+- scoped 改变
+- customBlocks 自定义块改变
+
+#### vue-rerender
+
+- template 改变且不涉及其他会触发 vue-reload 的条件
+
+#### style-update 
+
+- 组件前后的 descriptor 的 styles 属性不相等且不涉及其他会触发 vue-reload 的条件，此时发送 style-update 消息
+
+#### style-remove
+
+- 移除了整个 style 标签。此时需要发送 style-remove 消息
