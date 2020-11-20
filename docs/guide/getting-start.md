@@ -37,7 +37,8 @@ $ npm init vite-app vite_test
 link 本地的 Vite 到项目依赖
 
 ```bash
-$ cd vite && yarn && yarn link
+$ cd vite && yarn && yarn dev
+$ yarn link # 新开另一个终端窗口执行 yarn link 命令
 $ cd vite_test && yarn link vite
 ```
 
