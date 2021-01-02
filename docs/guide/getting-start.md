@@ -21,7 +21,7 @@ sidebarDepth: 3
 可以直接 Clone Vite 的原仓库也可以自己先 fork 一份再 Clone
 
 ```bash
-$ git clone git@github.com:vitejs/vite.git
+$ git clone https://github.com/zhangyuang/vite.git
 ```
 
 ### 使用 Vite 创建默认项目
