@@ -1,4 +1,4 @@
-# vite ⚡ 中文文档
+# vite ⚡ 1.0 中文文档
 
 [![npm][npm-img]][npm-url]
 [![node][node-img]][node-url]

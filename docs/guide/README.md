@@ -7,7 +7,7 @@
 $ git clone https://github.com/zhangyuang/vite.git
 ```
 
-2.0 版本的源码分析编写中，可时刻关注本项目获取最新信息。
+2.0 版本的文档翻译以及源码分析正在编写中，可时刻关注本项目获取最新信息。
 
 此[文档](https://github.com/zhangyuang/vite-design)将对 [Vite](https://github.com/vitejs/vite) 进行源码分析，以开发者的角度来讲述如何阅读调试开源项目的源码。不会涉及到所有的源码文件，将会对 Vite 中最核心的几个部分内容进行讲解。
 

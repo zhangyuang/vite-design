@@ -53,7 +53,8 @@ module.exports = {
             'module-resolve',
             'optimize',
             'render',
-            'hmr'
+            'hmr',
+            '2.0/optimize'
           ],
         }
       ]
