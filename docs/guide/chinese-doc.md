@@ -521,7 +521,7 @@ Snowpack v2 和 Vite 在本地开发服务都提供了原生 ES 模块的导入�
 
 - 两个项目的解决方案都是在生产环境进行应用的打包。但是 Vite 使用 Rollup 进行构建，Snowpack 通过插件使用 Parcel/webpack 进行构建。Vite 在很多场景下构建结果是更快并且更小的。另外与打包程序更紧密的结合可以更容易的在开发环境和生产环境配置中修改 Vite 的转换规则以及插件。
 
-- Vue support is a first-class feature in Vite. For example, Vite provides a much more fine-grained HMR integration with Vue, and the build config is fined tuned to produce the most efficient bundle.
+- Vue是Vite的一等公民，这意味着Vite会对Vue提供更加细粒度的HMR集成，而且通过打包配置能生成更加高效的bundle。
 
 - Vite 对 Vue 的支持是一流的。Vite 针对 Vue 提供了更细粒度的热替换功能以及在构建配置上做了调整来生成最有效的打包结果。
 
@@ -532,7 +532,7 @@ See [Contributing Guide](https://github.com/vitejs/vite/tree/master/.github/cont
 
 ## Trivia
 
-[vite](https://en.wiktionary.org/wiki/vite) is the french word for "fast" and is pronounced `/vit/`.
+[vite](https://en.wiktionary.org/wiki/vite)是法语单词"fast"，读作`/vit/`。
 
 ## License
 
