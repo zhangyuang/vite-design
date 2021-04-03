@@ -54,7 +54,8 @@ module.exports = {
             'optimize',
             'render',
             'hmr',
-            '2.0/optimize'
+            '2.0/optimize',
+            '2.0/ssr'
           ],
         }
       ]
