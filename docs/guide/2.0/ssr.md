@@ -13,6 +13,8 @@
 $ npm init ssr-app my-ssr-project --template=midway-vue3-ssr # 创建 Vue3 SSR 应用，同时支持 Serverless 形式一键发布或以传统 Node.js 应用的形式部署
 $ cd my-ssr-project && npm i && npm i vite @vitejs/plugin-vue --save-dev # 根据实际技术栈安装需要的插件
 $ npx ssr start --vite # 建议在 package.json 中添加 "start:vite": "ssr start --vite"
+$ open http://localhost:3000 # 以服务端渲染形式访问
+$ open http://localhost:3000/?csr=1 # 以客户端渲染形式访问
 ```
 即可使用 Vite 作为构建工具，提升启动速度和 HMR 速度。目前当前版本只在 Vue3 场景开启该功能，Vue2/React 的支持将会在下一个版本实现。详细的实现原理见下文
 
