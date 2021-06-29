@@ -7,9 +7,11 @@
 $ git clone https://github.com/zhangyuang/vite.git
 ```
 
+文档在线地址 http://vite.ssr-fc.com/ 通过 [ssr](https://github.com/ykfe/ssr) 框架以 serverless 的形式部署于阿里云
+
 2.0 版本的文档翻译以及源码分析正在编写中，可时刻关注本项目获取最新信息。
 
-本[文档](https://vite-design.surge.sh/)将对 [Vite](https://github.com/vitejs/vite) 进行源码分析，以开发者的角度来讲述如何阅读调试开源项目的源码。不会涉及到所有的源码文件，将会对 Vite 中最核心的几个部分内容进行讲解。
+本[文档](http://vite.ssr-fc.com/)将对 [Vite](https://github.com/vitejs/vite) 进行源码分析，以开发者的角度来讲述如何阅读调试开源项目的源码。不会涉及到所有的源码文件，将会对 Vite 中最核心的几个部分内容进行讲解。
 
 - Vite 的模块加载解析机制
 - Vite 的预优化机制
