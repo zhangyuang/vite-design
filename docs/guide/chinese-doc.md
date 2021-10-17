@@ -314,7 +314,7 @@ init({
 
 > 1.0.0-beta.3+
 
-web worker 脚本能够被直接导入只需要在后面加上 `?workder`。默认的导出是一个自定义的 workder 构造函数。
+web worker 脚本能够被直接导入只需要在后面加上 `?worker`。默认的导出是一个自定义的 worker 构造函数。
 
 
 ``` js
@@ -323,11 +323,11 @@ import MyWorker from './worker?worker'
 const worker = new MyWorker()
 ```
 
-在生产环境构建时，workders 将会以 base64 的形式内联。
+在生产环境构建时，workers 将会以 base64 的形式内联。
 
 worker 脚本同样使用 `import` 而不是 `importScripts()`，在开发环境下这依赖于浏览器的原生支持，并且仅在 Chrome 中能够工作，但是生产环境已经被编译过了。
 
-如果你不希望内联 worker 脚本，你可以替换你的 workder 脚本到 `public` 文件夹，然后初始化 workder 例如 `new Worker('/worker.js')`
+如果你不希望内联 worker 脚本，你可以替换你的 worker 脚本到 `public` 文件夹，然后初始化 worker 例如 `new Worker('/worker.js')`
 
 ### Config File
 
